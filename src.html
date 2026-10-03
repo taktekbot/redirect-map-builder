@@ -30,7 +30,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           </div>
         </div>
         <label class="rdm-check"><input type="checkbox" id="rdm-slash" checked> Match the old address with and without a trailing slash</label>
-        <label class="rdm-check"><input type="checkbox" id="rdm-force"> Netlify / Cloudflare Pages: the old files are still deployed (adds <code>!</code>)</label>
+        <label class="rdm-check"><input type="checkbox" id="rdm-force"> <span>Netlify / Cloudflare Pages: the old files are still deployed (adds <code>!</code>)</span></label>
       </div>
 
       <div id="rdm-notes" class="rdm-notes" aria-live="polite"></div>
@@ -59,7 +59,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
       <h2>Where each file goes</h2>
       <ul>
         <li><strong>Apache (.htaccess):</strong> at the top of the <code>.htaccess</code> file in your site's root folder. Uses <code>RedirectMatch</code> with anchored patterns, so <code>/blog</code> doesn't also catch <code>/blog-archive</code> the way a plain <code>Redirect</code> does (<a href="https://httpd.apache.org/docs/current/mod/mod_alias.html#redirect">source</a>).</li>
-        <li><strong>nginx:</strong> inside the <code>server { }</code> block for your domain, then <code>nginx -t</code> and reload.</li>
+        <li><strong>nginx:</strong> inside the <code>server { }</code> block for your domain, then <code style="white-space:nowrap">nginx -t</code> and reload.</li>
         <li><strong>Netlify and Cloudflare Pages (_redirects):</strong> a file named <code>_redirects</code> in the folder you publish. If the old page's file is still in that folder, Netlify serves the file and ignores the rule, unless the status ends in <code>!</code> (<a href="https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/">source</a>). Tick the box above if that's your case.</li>
         <li><strong>Cloudflare Bulk Redirects (CSV):</strong> in the dashboard, create a Bulk Redirect List and upload the file. No header row; source without <code>https://</code>, target with it (<a href="https://developers.cloudflare.com/rules/url-forwarding/bulk-redirects/reference/csv-file-format/">source</a>). The list does nothing until a Bulk Redirect Rule turns it on.</li>
         <li><strong>Vercel (vercel.json):</strong> merge the <code>redirects</code> array into your <code>vercel.json</code>. <code>"permanent": true</code> sends 308 and <code>false</code> sends 307, so for a 301 or 302 the tool writes <code>statusCode</code> instead (<a href="https://vercel.com/docs/project-configuration/vercel-json">source</a>).</li>
@@ -86,7 +86,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         .rdm .rdm-check { display: flex; gap: 8px; align-items: baseline; font-family: inherit; font-size: 14px; letter-spacing: 0; color: var(--muted); margin: 6px 0 0; }
         .rdm-notes { margin: 0 0 16px; font-size: 14px; color: var(--muted); }
         .rdm-notes p { margin: 0 0 6px; }
-        .rdm-notes .warn { color: var(--ink); }
+        .rdm-notes .warn { color: var(--ink); padding-left: 1.2em; text-indent: -1.2em; }
         .rdm-notes .warn::before { content: "! "; color: var(--signal); font-family: var(--mono); }
         .rdm-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: -1px; }
         .rdm-tabs button, .rdm-out button { font-family: var(--mono); font-size: 12px; padding: 7px 11px; cursor: pointer;
@@ -204,6 +204,9 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
               if (hops) chains++;
               out.push({ from: r.from, key: r.key, to: dest, host: r.host });
             });
+            // Loops are found after the first pass; list every line note in line order.
+            var lineOf = function (n) { var m = /^Line (\d+)/.exec(n[1]); return m ? +m[1] : 0; };
+            notes.sort(function (a, b) { return lineOf(a) - lineOf(b); });
             if (chains) notes.push(['ok', chains + (chains === 1 ? ' chain was' : ' chains were') + ' shortened so every old address goes straight to its final page.']);
 
             var home = out.filter(function (r) { return r.to === '/' || /^https?:\/\/[^\/]+\/?$/.test(r.to); }).length;
