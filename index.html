@@ -61,7 +61,7 @@
       <h1>Redirect map builder: old URLs to new, for any server</h1>
       <p class="stand">Two columns in, five config files out. It also catches the mistakes that make redirects fail. What you paste stays in your browser.</p>
 <p>When you move, rename or remove pages, each old address needs a permanent (301) redirect to the page that replaced it. Otherwise people and search engines arriving on the old link get a dead end. Writing a hundred of those rules by hand is slow, and the format is different on every host.</p>
-      <p>Paste your old and new addresses below, one pair per line. You get the rules for your server, ready to paste. Nothing is sent anywhere: the page reads your list and writes text.</p>
+      <p>Paste your old and new addresses below, one pair per line. Pick the tab for where your site lives (WordPress, Shopify, Squarespace, Wix, or your own server) and you get the list in the format it imports. Nothing is sent anywhere: the page reads your list and writes text.</p>
 
       <div class="rdm">
         <label for="rdm-in">Old address, new address (one pair per line)</label>
@@ -103,6 +103,15 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         <pre><code id="rdm-code"></code></pre>
       </div>
 
+      <h2>Where to get the list of old addresses</h2>
+      <p>Do this before you switch the old site off, while its pages still load.</p>
+      <ol>
+        <li><strong>The old sitemap.</strong> Open <code>/sitemap.xml</code> on the old site (WordPress with Yoast or Rank Math uses <code>/sitemap_index.xml</code>, which links to the rest). Every address in it is a page Google was told about.</li>
+        <li><strong>Search Console.</strong> Under Indexing → Pages, open "Indexed" and export the list: these are the addresses people can still find in Google. The list stops at 1,000 rows (<a href="https://support.google.com/webmasters/answer/7440203">source</a>), so for a bigger site, export Performance → Pages too and start with the pages that get clicks.</li>
+        <li><strong>Links you shared.</strong> Addresses in old newsletters, printed menus, QR codes and social profiles. These never show up in a sitemap, and they are often the ones people actually type.</li>
+      </ol>
+      <p>Put the old addresses in one spreadsheet column, write the new page next to each, and paste both columns above. A page with no real replacement can be left out: it will return "page not found", which is the honest answer.</p>
+
       <h2>What it checks before writing anything</h2>
       <ul>
         <li><strong>Chains.</strong> If <code>/a</code> goes to <code>/b</code> and <code>/b</code> goes to <code>/c</code>, both rules are rewritten to point straight at <code>/c</code>. Every extra hop is one more wait for the visitor, and Google's crawlers give up after 10 (<a href="https://developers.google.com/search/docs/crawling-indexing/http-network-errors">source</a>).</li>
@@ -112,7 +121,17 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         <li><strong>Everything to the homepage.</strong> Google says sending many old addresses to one unrelated page, like the homepage, "might be treated as a soft 404 error" (<a href="https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes">source</a>). If many lines point at <code>/</code>, you get a warning. Send each one to the closest real match, or let it return 404.</li>
       </ul>
 
-      <h2>Where each file goes</h2>
+      <h2>If your site is on WordPress, Shopify, Squarespace or Wix</h2>
+      <p>You don't need a server file. Each of these keeps its own list of redirects, and the tab with its name gives you that list in the format it imports. The redirects live on the new site, so if you moved to one of these from somewhere else, connect your old domain to the new site first.</p>
+      <ul>
+        <li><strong>WordPress:</strong> install the free Redirection plugin, open its Import/Export page, and import the file, or paste the lines into "Import from text". Each line reads <code>/old-url,/new-url,0,301</code>; the <code>0</code> means "not a pattern" (<a href="https://redirection.me/support/import-export-redirects/">source</a>). WordPress has no redirect list of its own, which is why the plugin is needed.</li>
+        <li><strong>Shopify:</strong> in your admin, go to Content → Menus → URL redirects → Import, and upload the file. Its columns are "Redirect from" and "Redirect to". One catch: Shopify only redirects an address that is broken. If a product or page still exists at the old address, the redirect does nothing until you delete it, or set the product to draft (<a href="https://help.shopify.com/en/manual/online-store/menus-and-links/url-redirect">source</a>).</li>
+        <li><strong>Squarespace:</strong> open Settings → Developer tools → URL mappings and paste the lines into the box, one per line, as <code>/old-url -&gt; /new-url 301</code>. The box holds about 2,500 lines, and the first matching line wins, so put single pages above broad ones (<a href="https://support.squarespace.com/hc/en-us/articles/205815308-URL-mappings">source</a>).</li>
+        <li><strong>Wix:</strong> in your dashboard, go to SEO &amp; GEO → Tools and settings → URL Redirect Manager → More Actions → Import redirects. The file has a header row, then the old path and the new address, at most 500 redirects per file (<a href="https://support.wix.com/en/article/importing-or-exporting-url-redirects-with-a-csv-file">source</a>). If Wix rejects the file, download its template from the same screen and paste the two columns under its headers.</li>
+      </ul>
+      <p>Shopify and Wix send a 301 whatever you pick above. On the WordPress and Squarespace tabs, a 308 is written as 301, the permanent redirect both accept.</p>
+
+      <h2>If you run your own server or host</h2>
       <ul>
         <li><strong>Apache (.htaccess):</strong> at the top of the <code>.htaccess</code> file in your site's root folder. Uses <code>RedirectMatch</code> with anchored patterns, so <code>/blog</code> doesn't also catch <code>/blog-archive</code> the way a plain <code>Redirect</code> does (<a href="https://httpd.apache.org/docs/current/mod/mod_alias.html#redirect">source</a>).</li>
         <li><strong>nginx:</strong> inside the <code>server { }</code> block for your domain, then <code style="white-space:nowrap">nginx -t</code> and reload.</li>
@@ -128,6 +147,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
 # HTTP/2 301
 # location: https://example.com/prices</code></pre>
       <p>Then run the new address through the same command. It should answer <code>200</code>, not another redirect.</p>
+      <p>No terminal? Paste an old address into a private browser window: the address bar should change to the new page, with no "page not found" on the way. A few days later, inspect the old address in Search Console's URL Inspection: "Page with redirect" means Google saw it.</p>
 
       <style>
         .rdm { margin: 0 0 20px; padding: 18px 20px; background: var(--paper-2); border-radius: 6px; }
@@ -165,13 +185,17 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           var notesEl = $('rdm-notes'), tabsEl = $('rdm-tabs'), codeEl = $('rdm-code'), whereEl = $('rdm-where');
 
           var formats = [
+            { id: 'wordpress', label: 'WordPress', file: 'redirection-import.csv', where: 'WordPress: Redirection plugin → Import' },
+            { id: 'shopify', label: 'Shopify', file: 'shopify-redirects.csv', where: 'Shopify: Content → Menus → URL redirects → Import' },
+            { id: 'squarespace', label: 'Squarespace', file: 'url-mappings.txt', where: 'Squarespace: Developer tools → URL mappings' },
+            { id: 'wix', label: 'Wix', file: 'wix-redirects.csv', where: 'Wix: URL Redirect Manager → Import (500 a file)' },
             { id: 'apache', label: '.htaccess', file: '.htaccess', where: 'Apache: top of .htaccess' },
             { id: 'nginx', label: 'nginx', file: 'redirects.conf', where: 'nginx: inside server { }' },
             { id: 'netlify', label: '_redirects', file: '_redirects', where: 'Netlify and Cloudflare Pages' },
             { id: 'cloudflare', label: 'Cloudflare CSV', file: 'bulk-redirects.csv', where: 'Cloudflare Bulk Redirect List' },
             { id: 'vercel', label: 'vercel.json', file: 'vercel.json', where: 'Vercel: merge into vercel.json' }
           ];
-          var current = 'apache';
+          var current = 'wordpress';
 
           formats.forEach(function (f) {
             var b = document.createElement('button');
@@ -291,7 +315,27 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           // Cloudflare's CSV needs quotes around a URL that holds a comma.
           function csv(u) { return /[",]/.test(u) ? '"' + u.replace(/"/g, '""') + '"' : u; }
 
+          // Site builders keep their own redirect list: one row per old path, no trailing-slash twins.
+          function one(r) { return encodeSpaces(r.key); }
+          function pairs(b, head, row) {
+            return (head ? [head] : []).concat(b.rules.map(function (r) { return row(one(r), r.to); })).join('\n');
+          }
+
           var writers = {
+            wordpress: function (b, status) {
+              var s = status === '302' ? '302' : '301';
+              return pairs(b, '', function (from, to) { return csv(from) + ',' + csv(to) + ',0,' + s; });
+            },
+            shopify: function (b) {
+              return pairs(b, 'Redirect from,Redirect to', function (from, to) { return csv(from) + ',' + csv(to); });
+            },
+            squarespace: function (b, status) {
+              var s = status === '302' ? '302' : '301';
+              return pairs(b, '', function (from, to) { return from + ' -> ' + to + ' ' + s; });
+            },
+            wix: function (b) {
+              return pairs(b, 'Old URL,New URL', function (from, to) { return csv(from) + ',' + csv(to); });
+            },
             apache: function (b, status) {
               return ['# Redirects (Apache mod_alias). Paste at the top of .htaccess.']
                 .concat(b.rules.map(function (r) {

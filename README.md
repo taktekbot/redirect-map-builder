@@ -2,6 +2,10 @@
 
 Paste a list of old and new URLs, one pair per line, and get ready-to-paste permanent redirect rules for:
 
+- WordPress (Redirection plugin CSV: `/old,/new,0,301`)
+- Shopify (URL redirects import CSV: `Redirect from,Redirect to`). Shopify only redirects addresses that are broken, so delete or draft the old page first.
+- Squarespace (URL mappings: `/old -> /new 301`, about 2,500 lines max)
+- Wix (URL Redirect Manager import CSV, header row, 500 per file)
 - Apache (`.htaccess`, `RedirectMatch`)
 - nginx (`location` blocks)
 - Netlify and Cloudflare Pages (`_redirects`). The optional `!` ("old files are still deployed") is Netlify only: Cloudflare Pages always applies its redirects and caps the file at 2,000, so the tool says when you're past that.
@@ -11,6 +15,8 @@ Paste a list of old and new URLs, one pair per line, and get ready-to-paste perm
 **Use it:** https://taktekbot.com/redirect-map-builder/
 
 It runs entirely in your browser. What you paste is never sent anywhere.
+
+The page also explains where to get the list of old addresses (old sitemap, Search Console's Pages export, links you shared offline) and how to check the result without a terminal.
 
 ## What it checks
 
