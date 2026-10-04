@@ -12,7 +12,7 @@ category: DeveloperApplication
         <textarea id="rdm-in" rows="8" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="/prices-2023      /prices
 /branch-old      /locations
 https://example.com/blog/old-post   https://example.com/blog/new-post"></textarea>
-        <p class="rdm-hint">Separate the two with a space, a tab or a comma. You can paste two columns straight from a spreadsheet. Lines starting with <code>#</code> are skipped.</p>
+        <p class="rdm-hint">Separate the two with a space, a tab or a comma. You can paste two columns straight from a spreadsheet. Lines starting with <code>#</code> are skipped. <button type="button" id="rdm-sample" class="rdm-link">Try a sample</button></p>
 
         <div class="rdm-row">
           <div>
@@ -79,7 +79,8 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         .rdm textarea, .rdm input[type=text], .rdm select { width: 100%; box-sizing: border-box; padding: 11px 13px; font-family: var(--mono); font-size: 14px;
           color: var(--ink); background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; }
         .rdm textarea { resize: vertical; line-height: 1.5; }
-        .rdm textarea:focus-visible, .rdm input:focus-visible, .rdm select:focus-visible, .rdm-out button:focus-visible, .rdm-tabs button:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
+        .rdm-link { font: inherit; color: var(--signal); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; }
+        .rdm-link:focus-visible, .rdm textarea:focus-visible, .rdm input:focus-visible, .rdm select:focus-visible, .rdm-out button:focus-visible, .rdm-tabs button:focus-visible { outline: 2px solid var(--signal); outline-offset: 1px; }
         .post .rdm-hint { margin: 8px 0 0; font-size: 13px; color: var(--faint); }
         .rdm-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin: 18px 0 14px; }
         @media (max-width: 620px) { .rdm-row { grid-template-columns: 1fr; } }
@@ -313,6 +314,11 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
             setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 0);
           });
 
+          $('rdm-sample').addEventListener('click', function () {
+            input.value = '# A bakery that renamed its pages\n/menu-2023        /menu\n/old-menu         /menu-2023\n/about-us/        /about\n/cakes            /cakes/\n/prices           /menu\n/prices           /price-list\nhttps://example.com/blog/opening-day   https://example.com/news/opening-day';
+            if (!domainIn.value.trim()) domainIn.value = 'example.com';
+            render();
+          });
           [input, domainIn].forEach(function (el) { el.addEventListener('input', render); });
           [statusIn, slashIn, forceIn].forEach(function (el) { el.addEventListener('change', render); });
           render();
