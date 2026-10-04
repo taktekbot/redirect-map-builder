@@ -86,7 +86,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           </div>
         </div>
         <label class="rdm-check"><input type="checkbox" id="rdm-slash" checked> Match the old address with and without a trailing slash</label>
-        <label class="rdm-check"><input type="checkbox" id="rdm-force"> <span>Netlify / Cloudflare Pages: the old files are still deployed (adds <code>!</code>)</span></label>
+        <label class="rdm-check"><input type="checkbox" id="rdm-force"> <span>Netlify: the old files are still deployed (adds <code>!</code>)</span></label>
       </div>
 
       <div id="rdm-notes" class="rdm-notes" aria-live="polite"></div>
@@ -116,7 +116,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
       <ul>
         <li><strong>Apache (.htaccess):</strong> at the top of the <code>.htaccess</code> file in your site's root folder. Uses <code>RedirectMatch</code> with anchored patterns, so <code>/blog</code> doesn't also catch <code>/blog-archive</code> the way a plain <code>Redirect</code> does (<a href="https://httpd.apache.org/docs/current/mod/mod_alias.html#redirect">source</a>).</li>
         <li><strong>nginx:</strong> inside the <code>server { }</code> block for your domain, then <code style="white-space:nowrap">nginx -t</code> and reload.</li>
-        <li><strong>Netlify and Cloudflare Pages (_redirects):</strong> a file named <code>_redirects</code> in the folder you publish. If the old page's file is still in that folder, Netlify serves the file and ignores the rule, unless the status ends in <code>!</code> (<a href="https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/">source</a>). Tick the box above if that's your case.</li>
+        <li><strong>Netlify and Cloudflare Pages (_redirects):</strong> a file named <code>_redirects</code> in the folder you publish. If the old page's file is still in that folder, Netlify serves the file and ignores the rule, unless the status ends in <code>!</code> (<a href="https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/">source</a>). Tick the box above if that's your case. Cloudflare Pages always applies its redirects, even when the old file is still there, and its format has no <code>!</code>, so leave the box unticked for it. It also stops at 2,000 redirects per file; past that, use Bulk Redirects (<a href="https://developers.cloudflare.com/pages/configuration/redirects/">source</a>).</li>
         <li><strong>Cloudflare Bulk Redirects (CSV):</strong> in the dashboard, create a Bulk Redirect List and upload the file. No header row; source without <code>https://</code>, target with it (<a href="https://developers.cloudflare.com/rules/url-forwarding/bulk-redirects/reference/csv-file-format/">source</a>). The list does nothing until a Bulk Redirect Rule turns it on.</li>
         <li><strong>Vercel (vercel.json):</strong> merge the <code>redirects</code> array into your <code>vercel.json</code>. <code>"permanent": true</code> sends 308 and <code>false</code> sends 307, so for a 301 or 302 the tool writes <code>statusCode</code> instead (<a href="https://vercel.com/docs/project-configuration/vercel-json">source</a>).</li>
       </ul>
@@ -288,6 +288,9 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
             return '^' + reEscape(p) + (slashIn.checked ? '/?' : (/\/$/.test(r.from) ? '/' : '')) + '$';
           }
 
+          // Cloudflare's CSV needs quotes around a URL that holds a comma.
+          function csv(u) { return /[",]/.test(u) ? '"' + u.replace(/"/g, '""') + '"' : u; }
+
           var writers = {
             apache: function (b, status) {
               return ['# Redirects (Apache mod_alias). Paste at the top of .htaccess.']
@@ -308,7 +311,11 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
               b.rules.forEach(function (r) {
                 variants(r).forEach(function (v) { rows.push(v + '  ' + r.to + '  ' + s); });
               });
-              return ['# _redirects (Netlify, Cloudflare Pages). Put this file in your publish folder.'].concat(rows).join('\n');
+              var head = forceIn.checked
+                ? ['# _redirects (Netlify). Put this file in your publish folder.', '# The ! is Netlify only. For Cloudflare Pages, untick the box: it always applies redirects.']
+                : ['# _redirects (Netlify, Cloudflare Pages). Put this file in your publish folder.'];
+              if (rows.length > 2000) head.push('# ' + rows.length + ' lines: Cloudflare Pages reads at most 2,000. Use the Cloudflare CSV tab (Bulk Redirects) there.');
+              return head.concat(rows).join('\n');
             },
             cloudflare: function (b, status) {
               if (!b.domain && b.rules.some(function (r) { return !r.host; })) {
@@ -318,7 +325,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
               b.rules.forEach(function (r) {
                 var host = r.host || b.domain;
                 var target = r.to.charAt(0) === '/' ? 'https://' + (b.domain || host) + r.to : r.to;
-                variants(r).forEach(function (v) { rows.push(host + v + ',' + target + ',' + status + ',,,,'); });
+                variants(r).forEach(function (v) { rows.push(csv(host + v) + ',' + csv(target) + ',' + status + ',,,,'); });
               });
               return rows.join('\n');
             },

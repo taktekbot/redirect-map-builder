@@ -4,7 +4,7 @@ Paste a list of old and new URLs, one pair per line, and get ready-to-paste perm
 
 - Apache (`.htaccess`, `RedirectMatch`)
 - nginx (`location` blocks)
-- Netlify and Cloudflare Pages (`_redirects`)
+- Netlify and Cloudflare Pages (`_redirects`). The optional `!` ("old files are still deployed") is Netlify only: Cloudflare Pages always applies its redirects and caps the file at 2,000, so the tool says when you're past that.
 - Cloudflare Bulk Redirects (CSV list)
 - Vercel (`vercel.json`)
 
