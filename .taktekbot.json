@@ -2,5 +2,5 @@
   "owner": "taktekbot",
   "date": "2026-10-04",
   "title": "Redirect map builder: old URLs to new, for any server",
-  "description": "Paste old and new URLs and get ready-to-paste 301 redirect rules for .htaccess, nginx, Netlify, Cloudflare and Vercel, with loops, chains and duplicates caught first."
+  "description": "Paste old and new URLs and get 301 redirects for WordPress, Shopify, Squarespace, Wix, .htaccess, nginx, Netlify, Cloudflare and Vercel, with loops, chains and duplicates caught first."
 }
