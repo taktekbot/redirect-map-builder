@@ -60,15 +60,14 @@
       <p class="eyebrow"><a href="/tools/">Free tool</a></p>
       <h1>Redirect map builder: old URLs to new, for WordPress, Shopify, Squarespace, Wix or any server</h1>
       <p class="stand">Two columns in, five config files out. It also catches the mistakes that make redirects fail. What you paste stays in your browser.</p>
-<p>When you move, rename or remove pages, each old address needs a permanent (301) redirect to the page that replaced it. Otherwise people and search engines arriving on the old link get a dead end. Writing a hundred of those rules by hand is slow, and the format is different on every host.</p>
-      <p>Paste your old and new addresses below, one pair per line. Pick the tab for where your site lives (WordPress, Shopify, Squarespace, Wix, or your own server) and you get the list in the format it imports. Nothing is sent anywhere: the page reads your list and writes text.</p>
+<p>Paste old and new addresses, one pair per line. You get 301 redirects in the format your host imports. <button type="button" id="rdm-sample" class="rdm-link">Try a sample</button></p>
 
       <div class="rdm">
-        <label for="rdm-in">Old address, new address (one pair per line)</label>
+        <label for="rdm-in">Old address, new address</label>
         <textarea id="rdm-in" rows="8" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="/prices-2023      /prices
 /branch-old      /locations
 https://example.com/blog/old-post   https://example.com/blog/new-post"></textarea>
-        <p class="rdm-hint">Separate the two with a space, a tab or a comma. You can paste two columns straight from a spreadsheet. Lines starting with <code>#</code> are skipped. <button type="button" id="rdm-sample" class="rdm-link">Try a sample</button></p>
+        <p class="rdm-hint">Separate the two with a space, a tab or a comma. You can paste two columns straight from a spreadsheet. Lines starting with <code>#</code> are skipped.</p>
 
         <div class="rdm-row">
           <div>
@@ -102,6 +101,10 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         </div>
         <pre><code id="rdm-code"></code></pre>
       </div>
+
+      <h2>Why each old address needs a redirect</h2>
+      <p>When you move, rename or remove pages, each old address needs a permanent (301) redirect to the page that replaced it. Otherwise people and search engines arriving on the old link get a dead end. Writing a hundred of those rules by hand is slow, and the format is different on every host.</p>
+      <p>Paste your old and new addresses below, one pair per line. Pick the tab for where your site lives (WordPress, Shopify, Squarespace, Wix, or your own server) and you get the list in the format it imports. Nothing is sent anywhere: the page reads your list and writes text.</p>
 
       <h2>Where to get the list of old addresses</h2>
       <p>Do this before you switch the old site off, while its pages still load.</p>
