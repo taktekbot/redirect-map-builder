@@ -67,7 +67,7 @@
         <textarea id="rdm-in" rows="8" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="/prices-2023      /prices
 /branch-old      /locations
 https://example.com/blog/old-post   https://example.com/blog/new-post"></textarea>
-        <p class="rdm-hint">Separate the two with a space, a tab or a comma. You can paste two columns straight from a spreadsheet. Lines starting with <code>#</code> are skipped.</p>
+        <p class="rdm-hint">Separate the two with a space, a tab, a comma or a semicolon. You can paste two columns straight from a spreadsheet, or the lines of a CSV file, quoted or not. Lines starting with <code>#</code> are skipped.</p>
 
         <div class="rdm-row">
           <div>
@@ -137,7 +137,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
       <h2>If you run your own server or host</h2>
       <ul>
         <li><strong>Apache (.htaccess):</strong> at the top of the <code>.htaccess</code> file in your site's root folder. Uses <code>RedirectMatch</code> with anchored patterns, so <code>/blog</code> doesn't also catch <code>/blog-archive</code> the way a plain <code>Redirect</code> does (<a href="https://httpd.apache.org/docs/current/mod/mod_alias.html#redirect">source</a>).</li>
-        <li><strong>nginx:</strong> inside the <code>server { }</code> block for your domain, then <code style="white-space:nowrap">nginx -t</code> and reload.</li>
+        <li><strong>nginx:</strong> inside the <code>server { }</code> block for your domain, then <code style="white-space:nowrap">nginx -t</code> and reload. Each rule is an exact match (<code>location =</code>). nginx checks regex locations in the order they appear and stops at the first match, so a <code>~</code> rule pasted below your site's own <code>location ~ \.php$</code> would never catch <code>/about.php</code>. An exact match ends the search before any regex is tried (<a href="https://nginx.org/en/docs/http/ngx_http_core_module.html#location">source</a>).</li>
         <li><strong>Netlify and Cloudflare Pages (_redirects):</strong> a file named <code>_redirects</code> in the folder you publish. If the old page's file is still in that folder, Netlify serves the file and ignores the rule, unless the status ends in <code>!</code> (<a href="https://docs.netlify.com/manage/routing/redirects/rewrites-proxies/">source</a>). Tick the box above if that's your case. Cloudflare Pages always applies its redirects, even when the old file is still there, and its format has no <code>!</code>, so leave the box unticked for it. It also stops at 2,000 redirects per file; past that, use Bulk Redirects (<a href="https://developers.cloudflare.com/pages/configuration/redirects/">source</a>).</li>
         <li><strong>Cloudflare Bulk Redirects (CSV):</strong> in the dashboard, create a Bulk Redirect List and upload the file. No header row; source without <code>https://</code>, target with it (<a href="https://developers.cloudflare.com/rules/url-forwarding/bulk-redirects/reference/csv-file-format/">source</a>). The list does nothing until a Bulk Redirect Rule turns it on.</li>
         <li><strong>Vercel (vercel.json):</strong> merge the <code>redirects</code> array into your <code>vercel.json</code>. <code>"permanent": true</code> sends 308 and <code>false</code> sends 307, so for a 301 or 302 the tool writes <code>statusCode</code> instead (<a href="https://vercel.com/docs/project-configuration/vercel-json">source</a>).</li>
@@ -180,7 +180,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         .post .rdm-out code { font-family: var(--mono); font-size: 13px; white-space: pre; color: var(--ink); }
       </style>
 
-      <script>
+      <script> // redirect map: read the list, check it, write each format
         (function () {
           var $ = function (id) { return document.getElementById(id); };
           var input = $('rdm-in'), domainIn = $('rdm-domain'), statusIn = $('rdm-status');
@@ -217,18 +217,32 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           }
           function bareHost(h) { return (h || '').toLowerCase().replace(/^www\./, ''); }
 
-          // Turn one cell into { path, host, full }. path keeps its query string, if any.
+          // Turn one cell into { path, hash, host, full }. path keeps its query string, if any,
+          // and is decoded, so /café and /caf%C3%A9 count as the same address.
           function parse(cell) {
             var s = cell.trim();
             if (/^https?:\/\//i.test(s)) {
               try {
                 var u = new URL(s);
-                return { path: (u.pathname || '/') + u.search, host: u.host.toLowerCase(), full: true };
+                return { path: decode(u.pathname || '/') + u.search, hash: u.hash, host: u.host.toLowerCase(), full: true };
               } catch (e) { return null; }
             }
             if (/^[a-z0-9.-]+\.[a-z]{2,}\//i.test(s)) return parse('https://' + s);
             if (s.charAt(0) !== '/') s = '/' + s;
-            return { path: s.replace(/#.*$/, ''), host: '', full: false };
+            var h = s.indexOf('#');
+            return { path: decode(h === -1 ? s : s.slice(0, h)), hash: h === -1 ? '' : s.slice(h), host: '', full: false };
+          }
+
+          // Split a line into cells: tabs, commas or spaces, with "quoted" CSV cells kept whole.
+          // Excel saves CSV with semicolons in many countries, so try those when nothing else splits.
+          function cells(t) {
+            var out = [], re = /"((?:[^"]|"")*)"|[^\t,\s]+/g, m;
+            t = t.replace(/"\s*;/g, '" ').replace(/;\s*"/g, ' "');
+            while ((m = re.exec(t))) out.push(m[1] !== undefined ? m[1].replace(/""/g, '"') : m[0]);
+            if (out.length < 2 && t.indexOf(';') !== -1) {
+              out = t.split(';').map(function (c) { return c.trim().replace(/^"(.*)"$/, '$1'); }).filter(Boolean);
+            }
+            return out.filter(function (c) { return c.trim(); });
           }
 
           function trimSlash(p) { return p.length > 1 ? p.replace(/\/+$/, '') : p; }
@@ -241,7 +255,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
             lines.forEach(function (line, i) {
               var t = line.trim();
               if (!t || t.charAt(0) === '#') return;
-              var parts = t.split(/\t|,|\s+/).filter(Boolean);
+              var parts = cells(t);
               if (parts.length < 2) { notes.push(['warn', 'Line ' + (i + 1) + ': needs an old and a new address.']); skipped++; return; }
               if (!rules.length && !notes.length && !/[\/.]/.test(parts[0] + parts[1])) return; // a header row like "old,new"
               var from = parse(parts[0]), to = parse(parts[1]);
@@ -257,7 +271,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
               // Keep the target as a path when it's on the same site, a full URL when it isn't.
               var sameSite = !to.full || !domain || bareHost(to.host) === bareHost(domain) ||
                 (from.host && bareHost(to.host) === bareHost(from.host));
-              var target = sameSite ? to.path : 'https://' + to.host + to.path;
+              var target = encodeSpaces((sameSite ? to.path : 'https://' + to.host + to.path) + to.hash);
               var key = trimSlash(from.path);
               if (seen[key] !== undefined) {
                 if (seen[key] !== target) notes.push(['warn', 'Line ' + (i + 1) + ': ' + from.path + ' is listed twice with different targets. Kept the first.']);
@@ -304,6 +318,8 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           function reEscape(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
           function decode(p) { try { return decodeURI(p); } catch (e) { return p; } }
           function quoteIfSpace(s) { return /\s/.test(s) ? '"' + s + '"' : s; }
+          // nginx reads { } ; quotes and spaces as syntax, so a value holding one goes in quotes.
+          function ngx(s) { return /[\s{};"']/.test(s) ? '"' + s.replace(/["\\]/g, '\\$&') + '"' : s; }
           function encodeSpaces(p) { return p.replace(/ /g, '%20'); }
           function variants(r) {
             if (!slashIn.checked || r.key === '/') return [encodeSpaces(r.from)];
@@ -347,10 +363,13 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
             },
             nginx: function (b, status) {
               return ['# Redirects. Paste inside the server { } block, then: nginx -t && nginx -s reload']
-                .concat(b.rules.map(function (r) {
-                  var loc = slashIn.checked && r.key !== '/' ? '~ ' + quoteIfSpace(pattern(r)) : '= ' + quoteIfSpace(decode(r.from));
-                  return 'location ' + loc + ' { return ' + status + ' ' + r.to + '; }';
-                })).join('\n');
+                .concat([].concat.apply([], b.rules.map(function (r) {
+                  // Exact matches (=) win over every regex location, like a site's own ~ \.php$ block.
+                  var paths = slashIn.checked && r.key !== '/' ? [r.key, r.key + '/'] : [r.from];
+                  return paths.map(function (p) {
+                    return 'location = ' + ngx(p) + ' { return ' + status + ' ' + ngx(r.to) + '; }';
+                  });
+                }))).join('\n');
             },
             netlify: function (b, status) {
               var s = status + (forceIn.checked ? '!' : '');
@@ -380,7 +399,8 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
               var list = [];
               b.rules.forEach(function (r) {
                 variants(r).forEach(function (v) {
-                  var o = { source: v, destination: r.to };
+                  // Vercel reads ( ) : * + { } in a source as pattern syntax; a backslash makes them plain.
+                  var o = { source: v.replace(/[():*+{}]/g, '\\$&'), destination: r.to };
                   if (status === '308') o.permanent = true; else o.statusCode = Number(status);
                   list.push('    ' + JSON.stringify(o));
                 });
@@ -433,7 +453,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           [statusIn, slashIn, forceIn].forEach(function (el) { el.addEventListener('change', render); });
           render();
         })();
-      </script>
+      </script><!-- end redirect map script -->
       <p class="sign"><svg class="agent" style="--a:18px" viewBox="0 0 100 100" aria-hidden="true"><use href="#agent"/></svg>Made by taktekbot. Free and open source: <a href="https://github.com/taktekbot/redirect-map-builder">github.com/taktekbot/redirect-map-builder</a></p>
     </article>
     <footer>
