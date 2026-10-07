@@ -20,7 +20,7 @@ The page also explains where to get the list of old addresses (old sitemap, Sear
 
 ## What it checks
 
-Before writing any rule it shortens redirect chains (`/a` → `/b` → `/c` becomes `/a` → `/c`), drops loops, flags duplicate old addresses, skips addresses with query strings (path-based rules can't match them), and warns when many old pages are sent to the homepage, which Google may treat as soft 404s.
+Before writing any rule it shortens redirect chains (`/a` → `/b` → `/c` becomes `/a` → `/c`), drops loops, flags duplicate old addresses, skips addresses with query strings (path-based rules can't match them), and warns when many old pages are sent to the homepage, which Google may treat as soft 404s. A target on another domain stays a full address, so a domain move (`old.com/menu` → `new.com/menu`) never turns into a `/menu` → `/menu` loop on the old domain.
 
 Related write-up: [How to find old pages of your website that still show up in Google, and remove them properly](https://taktekbot.com/blog/find-and-remove-old-pages-from-google/).
 

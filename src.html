@@ -17,7 +17,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           <div>
             <label for="rdm-domain">Your domain</label>
             <input id="rdm-domain" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="example.com">
-            <p class="rdm-hint">Needed for Cloudflare Bulk Redirects, which want full addresses.</p>
+            <p class="rdm-hint">Needed for Cloudflare Bulk Redirects, which want full addresses. Moving to a new domain? Type the old one.</p>
           </div>
           <div>
             <label for="rdm-status">Redirect type</label>
@@ -93,8 +93,9 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
       <pre><code>curl -sI https://example.com/prices-2023 | grep -iE '^(HTTP|location)'
 # HTTP/2 301
 # location: https://example.com/prices</code></pre>
-      <p>Then run the new address through the same command. It should answer <code>200</code>, not another redirect.</p>
-      <p>No terminal? Paste an old address into a private browser window: the address bar should change to the new page, with no "page not found" on the way. A few days later, inspect the old address in Search Console's URL Inspection: "Page with redirect" means Google saw it.</p>
+      <p>Then run the new address through the same command. It should answer <code>200</code>, not another redirect. A Shopify store may print <code>HTTP/2 103</code> first: that's Early Hints, a head start on loading files, not a redirect (<a href="https://www.rfc-editor.org/rfc/rfc8297">RFC 8297</a>).</p>
+      <p>On Windows, in PowerShell: <code>curl.exe -sI https://example.com/prices-2023 | findstr /i /b "HTTP location"</code></p>
+      <p>No terminal? Paste an old address into a private browser window: the address bar should change to the new page, with no "page not found" on the way. Chrome hides <code>https://</code> and <code>www.</code> there; right-click the address bar and tick "Always show full URLs" to see the whole address. A few days later, inspect the old address in Search Console's URL Inspection: "Page with redirect" means Google saw it.</p>
 
       <style>
         .rdm { margin: 0 0 20px; padding: 18px 20px; background: var(--paper-2); border-radius: 6px; }
@@ -124,7 +125,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
         .post .rdm-out code { font-family: var(--mono); font-size: 13px; white-space: pre; color: var(--ink); }
       </style>
 
-      <script> // redirect map: read the list, check it, write each format
+      <script> // redirect map: read the list, check it, write each format (other-domain targets stay full URLs)
         (function () {
           var $ = function (id) { return document.getElementById(id); };
           var input = $('rdm-in'), domainIn = $('rdm-domain'), statusIn = $('rdm-status');
@@ -193,7 +194,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
 
           function build() {
             var domain = cleanDomain(domainIn.value);
-            var notes = [], rules = [], seen = {}, skipped = 0;
+            var notes = [], rules = [], seen = {}, skipped = 0, movedSame = 0;
             var lines = input.value.split(/\r?\n/);
 
             lines.forEach(function (line, i) {
@@ -212,10 +213,12 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
                 notes.push(['warn', 'Line ' + (i + 1) + ': wildcards aren’t supported here. Write each address out.']);
                 skipped++; return;
               }
-              // Keep the target as a path when it's on the same site, a full URL when it isn't.
-              var sameSite = !to.full || !domain || bareHost(to.host) === bareHost(domain) ||
-                (from.host && bareHost(to.host) === bareHost(from.host));
+              // Keep the target as a path only when it's on the old address's own site. On a domain move,
+              // old.com/menu -> new.com/menu would otherwise become /menu -> /menu, a loop on the old domain.
+              var site = from.host || domain;
+              var sameSite = !to.full || (site && bareHost(to.host) === bareHost(site));
               var target = encodeSpaces((sameSite ? to.path : 'https://' + to.host + to.path) + to.hash);
+              if (!sameSite && trimSlash(to.path) === trimSlash(from.path)) movedSame++;
               var key = trimSlash(from.path);
               if (seen[key] !== undefined) {
                 if (seen[key] !== target) notes.push(['warn', 'Line ' + (i + 1) + ': ' + from.path + ' is listed twice with different targets. Kept the first.']);
@@ -249,6 +252,7 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
             // Loops are found after the first pass; list every line note in line order.
             var lineOf = function (n) { var m = /^Line (\d+)/.exec(n[1]); return m ? +m[1] : 0; };
             notes.sort(function (a, b) { return lineOf(a) - lineOf(b); });
+            if (movedSame) notes.push(['ok', movedSame + (movedSame === 1 ? ' line keeps its' : ' lines keep their') + ' path on another domain. On your own server or Cloudflare, one whole-domain redirect does those; keep the rules here for the paths that changed, and put them first.']);
             if (chains) notes.push(['ok', chains + (chains === 1 ? ' chain was' : ' chains were') + ' shortened so every old address goes straight to its final page.']);
 
             var home = out.filter(function (r) { return r.to === '/' || /^https?:\/\/[^\/]+\/?$/.test(r.to); }).length;
@@ -397,4 +401,4 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           [statusIn, slashIn, forceIn].forEach(function (el) { el.addEventListener('change', render); });
           render();
         })();
-      </script><!-- end redirect map script -->
+      </script><!-- end of the redirect map script -->
