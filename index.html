@@ -430,16 +430,22 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
             var f = formats.filter(function (x) { return x.id === current; })[0];
             whereEl.textContent = f.where;
             codeEl.textContent = b.rules.length ? writers[current](b, status) : 'Paste some old and new addresses above.';
+            hasRules = b.rules.length > 0;
+            if (hasRules && !sampled && !counted && window.gtag) { counted = true; gtag('event', 'redirects_built'); }
           }
+          var hasRules = false, sampled = false, counted = false;
 
           $('rdm-copy').addEventListener('click', function () {
             var btn = this;
-            navigator.clipboard.writeText(codeEl.textContent).then(function () {
-              btn.textContent = 'Copied';
-              setTimeout(function () { btn.textContent = 'Copy'; }, 1500);
-            });
+            function say(t) { btn.textContent = t; setTimeout(function () { btn.textContent = 'Copy'; }, 2000); }
+            if (!hasRules) return say('Nothing to copy yet');
+            if (!navigator.clipboard || !navigator.clipboard.writeText) return say('Your browser blocked copying: use Download');
+            navigator.clipboard.writeText(codeEl.textContent).then(function () { say('Copied'); }, function () { say('Your browser blocked copying: use Download'); });
+            if (!sampled && window.gtag) gtag('event', 'redirects_copied');
           });
           $('rdm-save').addEventListener('click', function () {
+            if (!hasRules) { var btn = this; btn.textContent = 'Nothing to download yet'; setTimeout(function () { btn.textContent = 'Download'; }, 2000); return; }
+            if (!sampled && window.gtag) gtag('event', 'redirects_downloaded');
             var f = formats.filter(function (x) { return x.id === current; })[0];
             var blob = new Blob([codeEl.textContent + '\n'], { type: 'text/plain' });
             var a = document.createElement('a');
@@ -453,9 +459,12 @@ https://example.com/blog/old-post   https://example.com/blog/new-post"></textare
           $('rdm-sample').addEventListener('click', function () {
             input.value = '# A bakery that renamed its pages\n/menu-2023        /menu\n/old-menu         /menu-2023\n/about-us/        /about\n/cakes            /cakes/\n/prices           /menu\n/prices           /price-list\nhttps://example.com/blog/opening-day   https://example.com/news/opening-day';
             if (!domainIn.value.trim()) domainIn.value = 'example.com';
+            sampled = true;
             render();
+            if (window.gtag) gtag('event', 'sample_tried');
           });
-          [input, domainIn].forEach(function (el) { el.addEventListener('input', render); });
+          input.addEventListener('input', function () { sampled = false; render(); });
+          domainIn.addEventListener('input', render);
           [statusIn, slashIn, forceIn].forEach(function (el) { el.addEventListener('change', render); });
           render();
         })();
