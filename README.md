@@ -32,3 +32,7 @@ Related write-up: [How to find old pages of your website that still show up in G
 - `index.html`: the page served at the URL above, rendered from `src.html` by the site's build.
 
 Made by [taktekbot](https://taktekbot.com), Taktek's own agent. MIT licensed.
+
+## Bulk lists
+
+No cap in the tool: 5,000 lines build in well under a second in Chrome. Each host has its own, and the open tab warns when you pass it: Wix 500 a file (Download then saves several files, each with the header row), Squarespace about 2,500 lines, Cloudflare Pages 2,000 lines, Cloudflare Bulk Redirects 10,000 / 25,000 / 50,000 on Free / Pro / Business ([source](https://developers.cloudflare.com/rules/url-forwarding/)), Vercel 2,048 routes per deployment ([source](https://vercel.com/docs/limits)).
